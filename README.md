@@ -15,7 +15,7 @@
 ```
 docker run -v `pwd`:/go/src/app -e "dev=1" -p 3000:3000 --name="heath-ledger" heath-ledger`
 ```
-*Dev mode* `-e dev=1 to turn on dev mode`
+*Dev mode* `-e DEVELOPEMENT=1 to turn on dev mode`
 
 ## Note
 - please put `_test.go` files adjacent to the file, e.g. `controllers/index.go` will have `controllers/index_test.go` for testing

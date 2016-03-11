@@ -45,14 +45,14 @@ func (user *User) HashPassword(password string) {
 	user.Password = hash
 }
 
-// NewUser is inserting a new user to the db
-func NewUser(db *mgo.Database, user *User) error {
+// newUser is inserting a new user to the db
+func newUser(db *mgo.Database, user *User) error {
 	user.ID = bson.NewObjectId()
 	return db.C("users").Insert(user)
 }
 
-// GetUser based on the given field
-func GetUser(db *mgo.Database, field string, value string) (user *User) {
+// getUser based on the given field
+func getUser(db *mgo.Database, field string, value string) (user *User) {
 	err := db.C("users").Find(bson.M{field: value}).One(&user)
 
 	if err != nil {

@@ -1,5 +1,5 @@
 #!/bin/sh
-if [ $dev = "1" ];
+if [ $DEVELOPEMENT = "1" ];
 then
     echo Development mode.
     go get github.com/codegangsta/gin
