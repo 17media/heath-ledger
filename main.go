@@ -11,6 +11,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/17media/heath-ledger/controllers"
 	"github.com/17media/heath-ledger/settings"
 	"github.com/codegangsta/negroni"
 	"github.com/facebookgo/grace/gracehttp"
@@ -35,6 +36,8 @@ func main() {
 	router := httprouter.New()
 	router.GET("/", Index)
 	router.GET("/hello/:name", Hello)
+
+	router.POST("/users", controllers.listUser)
 
 	// Middleware
 	n := negroni.Classic()
