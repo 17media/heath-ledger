@@ -26,7 +26,7 @@ func InitSettings() {
 	viper.SetDefault("AWS_SECRET_KEY", "shh.......")
 
 	// DB Section
-	viper.SetDefault("MONGODB_URL", "localhost/test")
+	viper.SetDefault("MONGODB_URL", "localhost/heath")
 
 	// Cache Section
 	viper.SetDefault("REDIS_URL", "localhost:6379/test")

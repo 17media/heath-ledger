@@ -1,4 +1,4 @@
-package models
+package controllers
 
 /*
 .__                   __  .__              .__             .___
@@ -10,13 +10,11 @@ package models
 */
 
 import (
-	"github.com/maxwellhealth/bongo"
+	"github.com/17media/heath-ledger/models"
 )
 
-// Activity is a generic object for all activities happens in the app
-type Activity struct {
-	bongo.DocumentBase `bson:",inline"`
-	Type               string `bson:"type" json:"type" binding:"required"`
-	Creator            User   `bson:"creator" json:"creator" binding:"required"`
-	Recipient          User   `bson:"recipient" json:"recipient" binding:"required"`
+// ListResponse is used for any listing response
+type ListResponse struct {
+	Meta    models.PaginationInfo `json:"meta"`
+	Objects interface{}           `json:"objects"`
 }

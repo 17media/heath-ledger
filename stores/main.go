@@ -1,4 +1,4 @@
-package models
+package stores
 
 /*
 .__                   __  .__              .__             .___
@@ -10,13 +10,28 @@ package models
 */
 
 import (
+	log "github.com/Sirupsen/logrus"
 	"github.com/maxwellhealth/bongo"
+	"github.com/spf13/viper"
+	"strings"
 )
 
-// Activity is a generic object for all activities happens in the app
-type Activity struct {
-	bongo.DocumentBase `bson:",inline"`
-	Type               string `bson:"type" json:"type" binding:"required"`
-	Creator            User   `bson:"creator" json:"creator" binding:"required"`
-	Recipient          User   `bson:"recipient" json:"recipient" binding:"required"`
+// MongoDB object for mongodb
+var MongoDB *bongo.Connection
+
+// InitMongoDB initializes a mongodb connection
+func InitMongoDB() {
+	url := strings.Split(viper.GetString("MONGODB_URL"), "/")
+	config := &bongo.Config{
+		ConnectionString: url[0],
+		Database:         url[1],
+	}
+	conn, err := bongo.Connect(config)
+
+	MongoDB = conn
+
+	if err != nil {
+		log.Fatalf("mongoDB connection failed")
+		panic(err)
+	}
 }

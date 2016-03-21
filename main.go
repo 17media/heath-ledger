@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"github.com/17media/heath-ledger/controllers"
 	"github.com/17media/heath-ledger/settings"
+	"github.com/17media/heath-ledger/stores"
 	"github.com/codegangsta/negroni"
 	"github.com/facebookgo/grace/gracehttp"
 	"github.com/julienschmidt/httprouter"
@@ -32,12 +33,14 @@ func Hello(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 func main() {
 	settings.InitSettings()
-
+	stores.InitMongoDB()
 	router := httprouter.New()
 	router.GET("/", Index)
 	router.GET("/hello/:name", Hello)
 
-	router.POST("/users", controllers.listUser)
+	router.POST("/users", controllers.CreateUser)
+	router.GET("/users", controllers.ListUsers)
+	router.GET("/users/:userID", controllers.GetUser)
 
 	// Middleware
 	n := negroni.Classic()
