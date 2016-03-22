@@ -24,7 +24,7 @@ type User struct {
 	Email              string    `bson:"email" json:"email" binding:"required"`
 	Username           string    `bson:"username" json:"username" binding:"required"`
 	Verified           bool      `bson:"verified" json:"verified"`
-	Password           []byte    `bson:"-" json:"-" binding:"required"`
+	Password           []byte    `bson:"password" json:"-" binding:"required"`
 	LastSeen           time.Time `bson:"last_seen,omitempty" json:"last_seen,omitempty"`
 	Location           []float64 `bson:"location,omitempty" json:"location,omitempty"`
 }

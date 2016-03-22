@@ -107,12 +107,36 @@ func ListUsers(rw http.ResponseWriter, request *http.Request, params httprouter.
 	fmt.Fprint(rw, string(response))
 }
 
-/*
-// updateUser - Update User by ID
-func updateUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-        fmt.Fprint(w, "Update User!\n")
+// UpdateUser - Update User by ID
+func UpdateUser(rw http.ResponseWriter, request *http.Request, params httprouter.Params) {
+	decoder := json.NewDecoder(request.Body)
+	requestJSON := make(map[string]string)
+
+	err := decoder.Decode(&requestJSON)
+	if err != nil {
+		rw.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(rw, err.Error())
+	}
+
+	updateQuery := bson.M{"$set": requestJSON}
+
+	// TODO: need to handle password
+
+	fmt.Println(updateQuery)
+
+	userID := params.ByName("userID")
+	dnfErr := stores.MongoDB.Collection("users").Collection().UpdateId(bson.ObjectIdHex(userID), updateQuery)
+
+	if dnfErr != nil {
+		rw.WriteHeader(http.StatusNotFound)
+		fmt.Fprint(rw, dnfErr.Error())
+	} else {
+		rw.WriteHeader(http.StatusNoContent)
+		fmt.Fprint(rw, "")
+	}
 }
 
+/*
 // deleteUser - Delete User by ID
 func deleteUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
         fmt.Fprint(w, "Delete User!\n")

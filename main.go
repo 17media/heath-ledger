@@ -38,9 +38,11 @@ func main() {
 	router.GET("/", Index)
 	router.GET("/hello/:name", Hello)
 
-	router.POST("/users", controllers.CreateUser)
-	router.GET("/users", controllers.ListUsers)
-	router.GET("/users/:userID", controllers.GetUser)
+	router.POST("/users/", controllers.CreateUser)
+	router.GET("/users/", controllers.ListUsers)
+	router.GET("/users/:userID/", controllers.GetUser)
+	router.POST("/users/:userID/", controllers.UpdateUser)
+	router.PATCH("/users/:userID/", controllers.UpdateUser)
 
 	// Middleware
 	n := negroni.Classic()
