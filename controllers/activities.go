@@ -19,28 +19,21 @@ import (
 	"gopkg.in/mgo.v2/bson"
 	"net/http"
 	"strconv"
-	"time"
 )
 
-// CreateUser - Create a new user
-func CreateUser(rw http.ResponseWriter, request *http.Request, params httprouter.Params) {
+// CreateActivity - Create a new Activity
+func CreateActivity(rw http.ResponseWriter, request *http.Request, params httprouter.Params) {
 	decoder := json.NewDecoder(request.Body)
-	requestJSON := make(map[string]string)
 
-	err := decoder.Decode(&requestJSON)
+	activity := &models.Activity{}
+
+	err := decoder.Decode(&activity)
 	if err != nil {
 		rw.WriteHeader(http.StatusBadRequest)
 		fmt.Fprint(rw, err.Error())
 	}
 
-	user := &models.User{
-		Username: requestJSON["username"],
-		Email:    requestJSON["email"],
-		LastSeen: time.Now(),
-	}
-	user.SetPassword(requestJSON["password"])
-
-	saveErr := stores.MongoDB.Collection("users").Save(user)
+	saveErr := stores.MongoDB.Collection("activitys").Save(activity)
 	if saveErr != nil {
 		rw.WriteHeader(http.StatusBadRequest)
 		fmt.Fprint(rw, saveErr.Error())
@@ -50,12 +43,12 @@ func CreateUser(rw http.ResponseWriter, request *http.Request, params httprouter
 	fmt.Fprint(rw, "")
 }
 
-// GetUser - Get User by mongo ObjectId
-func GetUser(rw http.ResponseWriter, request *http.Request, params httprouter.Params) {
-	user := &models.User{}
-	userID := params.ByName("userID")
+// GetActivity - Get Activity by mongo ObjectId
+func GetActivity(rw http.ResponseWriter, request *http.Request, params httprouter.Params) {
+	activity := &models.Activity{}
+	activityID := params.ByName("activityID")
 
-	err := stores.MongoDB.Collection("users").FindById(bson.ObjectIdHex(userID), user)
+	err := stores.MongoDB.Collection("activitys").FindById(bson.ObjectIdHex(activityID), activity)
 	if dnfError, ok := err.(*bongo.DocumentNotFoundError); ok {
 		rw.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(rw, dnfError.Error())
@@ -64,18 +57,18 @@ func GetUser(rw http.ResponseWriter, request *http.Request, params httprouter.Pa
 			rw.WriteHeader(http.StatusBadRequest)
 			fmt.Fprint(rw, err.Error())
 		} else {
-			response, _ := json.Marshal(user)
+			response, _ := json.Marshal(activity)
 			rw.Header().Set("Content-Type", "application/json")
 			fmt.Fprint(rw, string(response))
 		}
 	}
 }
 
-// ListUsers - User listing
-func ListUsers(rw http.ResponseWriter, request *http.Request, params httprouter.Params) {
+// ListActivities - Activity listing
+func ListActivities(rw http.ResponseWriter, request *http.Request, params httprouter.Params) {
 	request.ParseForm()
 
-	users := &[]models.User{}
+	activitys := &[]models.Activity{}
 
 	paginationInfo := models.DefaultPagination()
 
@@ -93,18 +86,18 @@ func ListUsers(rw http.ResponseWriter, request *http.Request, params httprouter.
 		"verified": verified,
 	}
 
-	results := models.ResultSet{stores.MongoDB.Collection("users").Find(query)}
+	results := models.ResultSet{stores.MongoDB.Collection("activitys").Find(query)}
 
 	if sort != "" {
 		results.Query.Sort(sort)
 	}
 
 	meta, _ := results.Paginate(paginationInfo, request.Host, request.URL)
-	results.Query.All(users)
+	results.Query.All(activitys)
 
 	tempJSON := &ListResponse{
 		Meta:    meta,
-		Objects: users,
+		Objects: activitys,
 	}
 
 	response, _ := json.Marshal(tempJSON)
@@ -113,21 +106,21 @@ func ListUsers(rw http.ResponseWriter, request *http.Request, params httprouter.
 	fmt.Fprint(rw, string(response))
 }
 
-// UpdateUser - Update User by ID
-func UpdateUser(rw http.ResponseWriter, request *http.Request, params httprouter.Params) {
+// UpdateActivity - Update Activity by ID
+func UpdateActivity(rw http.ResponseWriter, request *http.Request, params httprouter.Params) {
 	decoder := json.NewDecoder(request.Body)
-	requestJSON := make(map[string]string)
+	activity := models.Activity{}
 
-	err := decoder.Decode(&requestJSON)
+	err := decoder.Decode(&activity)
 	if err != nil {
 		rw.WriteHeader(http.StatusBadRequest)
 		fmt.Fprint(rw, err.Error())
 	}
 
-	updateQuery := bson.M{"$set": requestJSON}
+	updateQuery := bson.M{"$set": activity}
 
-	userID := params.ByName("userID")
-	dnfErr := stores.MongoDB.Collection("users").Collection().UpdateId(bson.ObjectIdHex(userID), updateQuery)
+	activityID := params.ByName("activityID")
+	dnfErr := stores.MongoDB.Collection("activitys").Collection().UpdateId(bson.ObjectIdHex(activityID), updateQuery)
 
 	if dnfErr != nil {
 		rw.WriteHeader(http.StatusNotFound)
@@ -138,11 +131,11 @@ func UpdateUser(rw http.ResponseWriter, request *http.Request, params httprouter
 	}
 }
 
-// DeleteUser - Delete User
-func DeleteUser(rw http.ResponseWriter, request *http.Request, params httprouter.Params) {
-	userID := params.ByName("userID")
-	user := &models.User{}
-	err := stores.MongoDB.Collection("users").FindById(bson.ObjectIdHex(userID), user)
+// DeleteActivity - Delete Activity
+func DeleteActivity(rw http.ResponseWriter, request *http.Request, params httprouter.Params) {
+	activityID := params.ByName("activityID")
+	activity := &models.Activity{}
+	err := stores.MongoDB.Collection("activitys").FindById(bson.ObjectIdHex(activityID), activity)
 	if dnfError, ok := err.(*bongo.DocumentNotFoundError); ok {
 		rw.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(rw, dnfError.Error())
@@ -151,7 +144,7 @@ func DeleteUser(rw http.ResponseWriter, request *http.Request, params httprouter
 			rw.WriteHeader(http.StatusBadRequest)
 			fmt.Fprint(rw, err.Error())
 		} else {
-			delError := stores.MongoDB.Collection("users").DeleteDocument(user)
+			delError := stores.MongoDB.Collection("activitys").DeleteDocument(activity)
 			if delError != nil {
 				rw.WriteHeader(http.StatusBadRequest)
 				fmt.Fprint(rw, delError.Error())

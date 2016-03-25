@@ -10,13 +10,13 @@ package models
 */
 
 import (
-	"github.com/maxwellhealth/bongo"
+        "github.com/maxwellhealth/bongo"
 )
 
 // Activity is a generic object for all activities happens in the app
 type Activity struct {
-	bongo.DocumentBase `bson:",inline"`
-	Type               string `bson:"type" json:"type" binding:"required"`
-	Creator            User   `bson:"creator" json:"creator" binding:"required"`
-	Recipient          User   `bson:"recipient" json:"recipient" binding:"required"`
+        bongo.DocumentBase `bson:",inline"`
+        Type               string `bson:"type" json:"type" binding:"required"`
+        Creator            User   `bson:"creator" json:"creator" binding:"required"`
+        Recipient          User   `bson:"recipient" json:"recipient" binding:"required"`
 }

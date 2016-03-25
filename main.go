@@ -38,11 +38,37 @@ func main() {
 	router.GET("/", Index)
 	router.GET("/hello/:name", Hello)
 
-	router.POST("/users/", controllers.CreateUser)
-	router.GET("/users/", controllers.ListUsers)
-	router.GET("/users/:userID/", controllers.GetUser)
-	router.POST("/users/:userID/", controllers.UpdateUser)
-	router.PATCH("/users/:userID/", controllers.UpdateUser)
+	// User api
+	router.POST("api/1//users/", controllers.CreateUser)
+	router.GET("api/1/users/", controllers.ListUsers)
+	router.GET("api/1/users/:userID/", controllers.GetUser)
+	router.POST("api/1/users/:userID/", controllers.UpdateUser)
+	router.PATCH("api/1/users/:userID/", controllers.UpdateUser)
+	router.DELETE("api/1//users/:userID/", controllers.DeleteUser)
+
+	// Channel api
+	router.POST("api/1/channels/", controllers.CreateChannel)
+	router.GET("api/1/channels/", controllers.ListChannels)
+	router.GET("api/1/channels/:channelID/", controllers.GetChannel)
+	router.POST("api/1/channels/:channelID/", controllers.UpdateChannel)
+	router.PATCH("api/1/channels/:channelID/", controllers.UpdateChannel)
+	router.DELETE("api/1/channels/:channelID/", controllers.DeleteChannel)
+
+	// Message api
+	router.POST("api/1/messages/", controllers.CreateMessage)
+	router.GET("api/1/messages/", controllers.ListMessages)
+	router.GET("api/1/messages/:messageID/", controllers.GetMessage)
+	router.POST("api/1/messages/:messageID/", controllers.UpdateMessage)
+	router.PATCH("api/1/messages/:messageID/", controllers.UpdateMessage)
+	router.DELETE("api/1/messages/:messageID/", controllers.DeleteMessage)
+
+	// Activity api
+	router.POST("api/1/activities/", controllers.CreateActivity)
+	router.GET("api/1/activities/", controllers.ListActitivities)
+	router.GET("api/1/activities/:activityID/", controllers.GetActivity)
+	router.POST("api/1/activities/:activityID/", controllers.UpdateActivity)
+	router.PATCH("api/1/activities/:activityID/", controllers.UpdateActivity)
+	router.DELETE("api/1/activities/:activityID/", controllers.DeleteActivity)
 
 	// Middleware
 	n := negroni.Classic()

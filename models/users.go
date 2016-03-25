@@ -10,7 +10,6 @@ package models
 */
 
 import (
-	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"github.com/dchest/uniuri"
 	"github.com/maxwellhealth/bongo"
@@ -39,13 +38,17 @@ func generatePassword() string {
 // SetPassword sets the password to hash
 func (user *User) SetPassword(password string) error {
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	fmt.Println(user)
 	user.Password = hash
 	if err != nil {
 		log.Fatalf("Couldn't hash password: %v", err)
 		return err
 	}
 	return err
+}
+
+// HashPassword returns a hash for the given password
+func HashPassword(password string) ([]byte, error) {
+	return bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 }
 
 // checkPassword takes a string and check against the password hash
