@@ -10,30 +10,33 @@ package settings
 */
 
 import (
-	"github.com/spf13/viper"
+        "github.com/spf13/viper"
 )
 
 // InitSettings initialize the settings for the app
 func InitSettings() {
-	// DEBUG mode
-	viper.SetDefault("DEBUG", false)
+        // DEBUG mode
+        viper.SetDefault("DEBUG", false)
 
-	// Port
-	viper.SetDefault("PORT", "8000")
+        // JWT
+        viper.SetDefault("SECRET_KEY", "...sshhh")
 
-	// AWS Section
-	viper.SetDefault("AWS_ACCESS_KEY_ID", "the truth lies beneath")
-	viper.SetDefault("AWS_SECRET_KEY", "shh.......")
+        // Port
+        viper.SetDefault("PORT", "8000")
 
-	// DB Section
-	viper.SetDefault("MONGODB_URL", "localhost/heath")
+        // AWS Section
+        viper.SetDefault("AWS_ACCESS_KEY_ID", "the truth lies beneath")
+        viper.SetDefault("AWS_SECRET_KEY", "shh.......")
 
-	// Cache Section
-	viper.SetDefault("REDIS_URL", "localhost:6379/test")
+        // DB Section
+        viper.SetDefault("MONGODB_URL", "localhost/heath")
 
-	viper.AutomaticEnv()
+        // Cache Section
+        viper.SetDefault("REDIS_URL", "localhost:6379/test")
 
-	if viper.GetBool("DEVELOPMENT") {
-		DevSettings()
-	}
+        viper.AutomaticEnv()
+
+        if viper.GetBool("DEVELOPMENT") {
+                DevSettings()
+        }
 }

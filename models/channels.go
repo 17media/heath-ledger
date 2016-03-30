@@ -17,7 +17,8 @@ import (
 type Channel struct {
         bongo.DocumentBase `bson:",inline"`
         Name               string `bson:"name" json:"name"`
-        Users              []User `bson:"users" json:"users"`
+        Creator            User   `bson:"creator" json:"creator" binding:"required"`
+        Participants       []User `bson:"participants" json:"participants" binding:"required"`
 }
 
 // Message is an archvie of messages in a channel

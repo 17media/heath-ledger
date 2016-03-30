@@ -10,76 +10,88 @@ package main
 */
 
 import (
-	"fmt"
-	"github.com/17media/heath-ledger/controllers"
-	"github.com/17media/heath-ledger/settings"
-	"github.com/17media/heath-ledger/stores"
-	"github.com/codegangsta/negroni"
-	"github.com/facebookgo/grace/gracehttp"
-	"github.com/julienschmidt/httprouter"
-	"github.com/spf13/viper"
-	"net/http"
+        "fmt"
+        "github.com/17media/heath-ledger/controllers"
+        "github.com/17media/heath-ledger/settings"
+        "github.com/17media/heath-ledger/stores"
+        //"github.com/auth0/go-jwt-middleware"
+        "github.com/codegangsta/negroni"
+        //"github.com/dgrijalva/jwt-go"
+        "github.com/facebookgo/grace/gracehttp"
+        "github.com/julienschmidt/httprouter"
+        "github.com/spf13/viper"
+        "net/http"
 )
 
 // Index function
 func Index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	fmt.Fprint(w, viper.GetBool("DEBUG"))
+        fmt.Fprint(w, viper.GetBool("DEBUG"))
 }
 
 // Hello function
 func Hello(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	fmt.Fprintf(w, "hello, %s!\n", ps.ByName("name"))
+        fmt.Fprintf(w, "hello, %s!\n", ps.ByName("name"))
 }
 
 func main() {
-	settings.InitSettings()
-	stores.InitMongoDB()
-	router := httprouter.New()
-	router.GET("/", Index)
-	router.GET("/hello/:name", Hello)
+        settings.InitSettings()
+        stores.InitMongoDB()
+        router := httprouter.New()
+        router.GET("/", Index)
+        router.GET("/hello/:name", Hello)
+        /*
+        jwtMiddleware := jwtmiddleware.New(jwtmiddleware.Options{
+                ValidationKeyGetter: func(token *jwt.Token) (interface{}, error) {
+                        return []byte(viper.GetString("JWT_SECRET")), nil
+                },
+                Extractor: jwtmiddleware.FromFirst(jwtmiddleware.FromAuthHeader,
+                        jwtmiddleware.FromParameter("auth_code")),
+                SigningMethod: jwt.SigningMethodHS256,
+        })
+        */
 
-	// User api
-	router.POST("api/1//users/", controllers.CreateUser)
-	router.GET("api/1/users/", controllers.ListUsers)
-	router.GET("api/1/users/:userID/", controllers.GetUser)
-	router.POST("api/1/users/:userID/", controllers.UpdateUser)
-	router.PATCH("api/1/users/:userID/", controllers.UpdateUser)
-	router.DELETE("api/1//users/:userID/", controllers.DeleteUser)
+        // User api
+        router.POST("/api/1//users/", controllers.CreateUser)
+        router.GET("/api/1/users/", controllers.ListUsers)
+        router.GET("/api/1/users/:userID/", controllers.GetUser)
+        router.POST("/api/1/users/:userID/", controllers.UpdateUser)
+        router.PATCH("/api/1/users/:userID/", controllers.UpdateUser)
+        router.DELETE("/api/1//users/:userID/", controllers.DeleteUser)
 
-	// Channel api
-	router.POST("api/1/channels/", controllers.CreateChannel)
-	router.GET("api/1/channels/", controllers.ListChannels)
-	router.GET("api/1/channels/:channelID/", controllers.GetChannel)
-	router.POST("api/1/channels/:channelID/", controllers.UpdateChannel)
-	router.PATCH("api/1/channels/:channelID/", controllers.UpdateChannel)
-	router.DELETE("api/1/channels/:channelID/", controllers.DeleteChannel)
+        // Channel api
+        router.POST("/api/1/channels/", controllers.CreateChannel)
+        router.GET("/api/1/channels/", controllers.ListChannels)
+        router.GET("/api/1/channels/:channelID/", controllers.GetChannel)
+        router.POST("/api/1/channels/:channelID/", controllers.UpdateChannel)
+        router.PATCH("/api/1/channels/:channelID/", controllers.UpdateChannel)
+        router.DELETE("/api/1/channels/:channelID/", controllers.DeleteChannel)
 
-	// Message api
-	router.POST("api/1/messages/", controllers.CreateMessage)
-	router.GET("api/1/messages/", controllers.ListMessages)
-	router.GET("api/1/messages/:messageID/", controllers.GetMessage)
-	router.POST("api/1/messages/:messageID/", controllers.UpdateMessage)
-	router.PATCH("api/1/messages/:messageID/", controllers.UpdateMessage)
-	router.DELETE("api/1/messages/:messageID/", controllers.DeleteMessage)
+        // Message api
+        router.POST("/api/1/messages/", controllers.CreateMessage)
+        router.GET("/api/1/messages/", controllers.ListMessages)
+        router.GET("/api/1/messages/:messageID/", controllers.GetMessage)
+        router.POST("/api/1/messages/:messageID/", controllers.UpdateMessage)
+        router.PATCH("/api/1/messages/:messageID/", controllers.UpdateMessage)
+        router.DELETE("/api/1/messages/:messageID/", controllers.DeleteMessage)
 
-	// Activity api
-	router.POST("api/1/activities/", controllers.CreateActivity)
-	router.GET("api/1/activities/", controllers.ListActitivities)
-	router.GET("api/1/activities/:activityID/", controllers.GetActivity)
-	router.POST("api/1/activities/:activityID/", controllers.UpdateActivity)
-	router.PATCH("api/1/activities/:activityID/", controllers.UpdateActivity)
-	router.DELETE("api/1/activities/:activityID/", controllers.DeleteActivity)
+        // Activity api
+        router.POST("/api/1/activities/", controllers.CreateActivity)
+        router.GET("/api/1/activities/", controllers.ListActivities)
+        router.GET("/api/1/activities/:activityID/", controllers.GetActivity)
+        router.POST("/api/1/activities/:activityID/", controllers.UpdateActivity)
+        router.PATCH("/api/1/activities/:activityID/", controllers.UpdateActivity)
+        router.DELETE("/api/1/activities/:activityID/", controllers.DeleteActivity)
 
-	// Middleware
-	n := negroni.Classic()
-	n.UseHandler(router)
+        // Middleware
+        n := negroni.Classic()
+        n.UseHandler(router)
 
-	// Start server
-	gracehttp.Serve(
-		&http.Server{
-			Addr:    ":" + viper.GetString("PORT"),
-			Handler: n,
-		},
-	)
+        // Start server
+        gracehttp.Serve(
+                &http.Server{
+                        Addr:    ":" + viper.GetString("PORT"),
+                        Handler: n,
+                },
+        )
 
 }

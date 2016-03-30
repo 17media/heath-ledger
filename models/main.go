@@ -11,9 +11,10 @@ package models
 
 import (
         "fmt"
-        "github.com/maxwellhealth/bongo"
         url "net/url"
         "strconv"
+
+        "github.com/maxwellhealth/bongo"
 )
 
 // ResultSet is an abstract layer of bongo.ResultSet

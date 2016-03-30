@@ -12,39 +12,76 @@ package controllers
 import (
         "encoding/json"
         "fmt"
+        "strings"
+
         "github.com/17media/heath-ledger/models"
         "github.com/17media/heath-ledger/stores"
+        // "github.com/gorilla/context"
+        "net/http"
+        "strconv"
+
         "github.com/julienschmidt/httprouter"
         "github.com/maxwellhealth/bongo"
         "gopkg.in/mgo.v2/bson"
-        "net/http"
-        "strconv"
 )
+
+// ChannelRequest takes in name and particpants to create a channel
+type ChannelRequest struct {
+        Creator      bson.ObjectId
+        Name         string
+        Participants []bson.ObjectId
+}
 
 // CreateChannel - Create a new Channel
 func CreateChannel(rw http.ResponseWriter, request *http.Request, params httprouter.Params) {
-        decoder := json.NewDecoder(request.Body)
-
+        // user := context.Get(request, "user").(models.User)
+        rw.Header().Set("Content-Type", "application/json")
+        channelRequest := &ChannelRequest{}
         channel := &models.Channel{}
+        decoder := json.NewDecoder(request.Body)
+        decodeErr := decoder.Decode(channelRequest)
 
-        err := decoder.Decode(&channel)
-        if err != nil {
-                rw.WriteHeader(http.StatusBadRequest)
-                fmt.Fprint(rw, err.Error())
+        users := &[]models.User{}
+        usersQuery := bson.M{
+                "_id": bson.M{
+                        "$in": channelRequest.Participants,
+                },
         }
 
-        saveErr := stores.MongoDB.Collection("channels").Save(channel)
-        if saveErr != nil {
+        results := stores.MongoDB.Collection("users").Find(usersQuery)
+        results.Query.All(users)
+
+        if decodeErr != nil {
                 rw.WriteHeader(http.StatusBadRequest)
-                fmt.Fprint(rw, saveErr.Error())
+                fmt.Fprint(rw, decodeErr.Error())
+        } else {
+                query := bson.M{
+                        "participants": users,
+                }
+
+                mongoErr := stores.MongoDB.Collection("channels").FindOne(query, channel)
+                if _, ok := mongoErr.(*bongo.DocumentNotFoundError); ok {
+                        //channel.Creator = user
+                        channel.Participants = *users
+                        saveErr := stores.MongoDB.Collection("channels").Save(channel)
+                        if saveErr != nil {
+                                rw.WriteHeader(http.StatusBadRequest)
+                                fmt.Fprint(rw, saveErr.Error())
+                        } else {
+                                rw.WriteHeader(http.StatusCreated)
+                        }
+                } else {
+                        rw.WriteHeader(http.StatusOK)
+                }
+                response, _ := json.Marshal(channel)
+                fmt.Fprint(rw, string(response))
         }
 
-        rw.WriteHeader(http.StatusCreated)
-        fmt.Fprint(rw, "")
 }
 
 // GetChannel - Get Channel by mongo ObjectId
 func GetChannel(rw http.ResponseWriter, request *http.Request, params httprouter.Params) {
+        rw.Header().Set("Content-Type", "application/json")
         channel := &models.Channel{}
         channelID := params.ByName("channelID")
 
@@ -66,11 +103,12 @@ func GetChannel(rw http.ResponseWriter, request *http.Request, params httprouter
 
 // ListChannels - Channel listing
 func ListChannels(rw http.ResponseWriter, request *http.Request, params httprouter.Params) {
+        rw.Header().Set("Content-Type", "application/json")
         request.ParseForm()
 
         channels := &[]models.Channel{}
-
         paginationInfo := models.DefaultPagination()
+        query := bson.M{}
 
         if limit := request.Form.Get("limit"); limit != "" {
                 paginationInfo.Limit, _ = strconv.Atoi(limit)
@@ -80,10 +118,19 @@ func ListChannels(rw http.ResponseWriter, request *http.Request, params httprout
         }
         sort := request.Form.Get("sort")
 
-        verified, _ := strconv.ParseBool(request.Form.Get("verified"))
+        if name := request.Form.Get("name"); name != "" {
+                query["name"] = name
+        }
 
-        query := bson.M{
-                "verified": verified,
+        if participants := request.Form.Get("participants"); participants != "" {
+                elemMatchParticipants := []bson.M{}
+                for _, userID := range strings.Split(participants, ",") {
+                        elemMatchParticipants = append(elemMatchParticipants,
+                                bson.M{"$elemMatch": bson.M{"_id": bson.ObjectIdHex(userID)}})
+                }
+                query["participants"] = bson.M{
+                        "$all": elemMatchParticipants,
+                }
         }
 
         results := models.ResultSet{stores.MongoDB.Collection("channels").Find(query)}
@@ -102,37 +149,75 @@ func ListChannels(rw http.ResponseWriter, request *http.Request, params httprout
 
         response, _ := json.Marshal(tempJSON)
 
-        rw.Header().Set("Content-Type", "application/json")
         fmt.Fprint(rw, string(response))
 }
 
 // UpdateChannel - Update Channel by ID
 func UpdateChannel(rw http.ResponseWriter, request *http.Request, params httprouter.Params) {
-        decoder := json.NewDecoder(request.Body)
-        channel := models.Channel{}
-
-        err := decoder.Decode(&channel)
-        if err != nil {
-                rw.WriteHeader(http.StatusBadRequest)
-                fmt.Fprint(rw, err.Error())
-        }
-
-        updateQuery := bson.M{"$set": channel}
+        rw.Header().Set("Content-Type", "application/json")
 
         channelID := params.ByName("channelID")
-        dnfErr := stores.MongoDB.Collection("channels").Collection().UpdateId(bson.ObjectIdHex(channelID), updateQuery)
+        decoder := json.NewDecoder(request.Body)
+        channelRequest := ChannelRequest{}
+        channel := &models.Channel{}
 
-        if dnfErr != nil {
+        mongoErr := stores.MongoDB.Collection("channels").FindById(bson.ObjectIdHex(channelID), channel)
+        if dnfError, ok := mongoErr.(*bongo.DocumentNotFoundError); ok {
                 rw.WriteHeader(http.StatusNotFound)
-                fmt.Fprint(rw, dnfErr.Error())
+                fmt.Fprint(rw, dnfError.Error())
         } else {
-                rw.WriteHeader(http.StatusNoContent)
-                fmt.Fprint(rw, "")
+                decodeErr := decoder.Decode(&channelRequest)
+                if decodeErr != nil {
+                        rw.WriteHeader(http.StatusBadRequest)
+                        fmt.Fprint(rw, decodeErr.Error())
+                }
+
+                if channelRequest.Name != "" {
+                        channel.Name = channelRequest.Name
+                }
+
+                if channelRequest.Creator != "" {
+                        creator := models.User{}
+                        ceatorErr := stores.MongoDB.Collection("users").FindById(channelRequest.Creator, creator)
+                        if creatorNotFound, ok := ceatorErr.(*bongo.DocumentNotFoundError); ok {
+                                rw.WriteHeader(http.StatusNotFound)
+                                fmt.Fprint(rw, creatorNotFound.Error())
+                        }
+                        channel.Creator = creator
+                }
+
+                if len(channelRequest.Participants) > 0 {
+                        participants := []models.User{}
+                        usersQuery := bson.M{
+                                "_id": bson.M{
+                                        "$in": channelRequest.Participants,
+                                },
+                        }
+
+                        results := stores.MongoDB.Collection("users").Find(usersQuery)
+                        results.Query.All(participants)
+                        channel.Participants = participants
+                }
+
+                updateQuery := bson.M{"$set": channel}
+
+                updateErr := stores.MongoDB.Collection("channels").Collection().UpdateId(bson.ObjectIdHex(channelID), updateQuery)
+
+                if updateErr != nil {
+                        rw.WriteHeader(http.StatusBadRequest)
+                        fmt.Fprint(rw, updateErr.Error())
+                } else {
+                        response, _ := json.Marshal(&channel)
+                        rw.WriteHeader(http.StatusOK)
+                        fmt.Fprint(rw, string(response))
+                }
         }
 }
 
 // DeleteChannel - Delete Channel
 func DeleteChannel(rw http.ResponseWriter, request *http.Request, params httprouter.Params) {
+        rw.Header().Set("Content-Type", "application/json")
+
         channelID := params.ByName("channelID")
         channel := &models.Channel{}
         err := stores.MongoDB.Collection("channels").FindById(bson.ObjectIdHex(channelID), channel)
