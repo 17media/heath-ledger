@@ -13,8 +13,10 @@ import (
         "fmt"
         url "net/url"
         "strconv"
+        "strings"
 
         "github.com/maxwellhealth/bongo"
+        "gopkg.in/mgo.v2/bson"
 )
 
 // ResultSet is an abstract layer of bongo.ResultSet
@@ -88,4 +90,12 @@ func (r *ResultSet) Paginate(info *PaginationInfo, host string, urlObj *url.URL)
         }
 
         return *info, nil
+}
+
+// GetFilter is the lazy function of generating M
+func GetFilter(filterString string) bson.M {
+        if strings.Contains(filterString, "__") {
+                return bson.M{}
+        }
+        return bson.M{}
 }

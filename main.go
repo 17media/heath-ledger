@@ -11,16 +11,18 @@ package main
 
 import (
         "fmt"
+
         "github.com/17media/heath-ledger/controllers"
         "github.com/17media/heath-ledger/settings"
         "github.com/17media/heath-ledger/stores"
         //"github.com/auth0/go-jwt-middleware"
         "github.com/codegangsta/negroni"
         //"github.com/dgrijalva/jwt-go"
+        "net/http"
+
         "github.com/facebookgo/grace/gracehttp"
         "github.com/julienschmidt/httprouter"
         "github.com/spf13/viper"
-        "net/http"
 )
 
 // Index function
@@ -40,14 +42,14 @@ func main() {
         router.GET("/", Index)
         router.GET("/hello/:name", Hello)
         /*
-        jwtMiddleware := jwtmiddleware.New(jwtmiddleware.Options{
-                ValidationKeyGetter: func(token *jwt.Token) (interface{}, error) {
-                        return []byte(viper.GetString("JWT_SECRET")), nil
-                },
-                Extractor: jwtmiddleware.FromFirst(jwtmiddleware.FromAuthHeader,
-                        jwtmiddleware.FromParameter("auth_code")),
-                SigningMethod: jwt.SigningMethodHS256,
-        })
+           jwtMiddleware := jwtmiddleware.New(jwtmiddleware.Options{
+                   ValidationKeyGetter: func(token *jwt.Token) (interface{}, error) {
+                           return []byte(viper.GetString("JWT_SECRET")), nil
+                   },
+                   Extractor: jwtmiddleware.FromFirst(jwtmiddleware.FromAuthHeader,
+                           jwtmiddleware.FromParameter("auth_code")),
+                   SigningMethod: jwt.SigningMethodHS256,
+           })
         */
 
         // User api
@@ -74,13 +76,15 @@ func main() {
         router.PATCH("/api/1/messages/:messageID/", controllers.UpdateMessage)
         router.DELETE("/api/1/messages/:messageID/", controllers.DeleteMessage)
 
-        // Activity api
-        router.POST("/api/1/activities/", controllers.CreateActivity)
-        router.GET("/api/1/activities/", controllers.ListActivities)
-        router.GET("/api/1/activities/:activityID/", controllers.GetActivity)
-        router.POST("/api/1/activities/:activityID/", controllers.UpdateActivity)
-        router.PATCH("/api/1/activities/:activityID/", controllers.UpdateActivity)
-        router.DELETE("/api/1/activities/:activityID/", controllers.DeleteActivity)
+        /*
+           // Activity api
+           router.POST("/api/1/activities/", controllers.CreateActivity)
+           router.GET("/api/1/activities/", controllers.ListActivities)
+           router.GET("/api/1/activities/:activityID/", controllers.GetActivity)
+           router.POST("/api/1/activities/:activityID/", controllers.UpdateActivity)
+           router.PATCH("/api/1/activities/:activityID/", controllers.UpdateActivity)
+           router.DELETE("/api/1/activities/:activityID/", controllers.DeleteActivity)
+        */
 
         // Middleware
         n := negroni.Classic()

@@ -244,24 +244,26 @@ func DeleteChannel(rw http.ResponseWriter, request *http.Request, params httprou
 
 // CreateMessage - Create a new Message
 func CreateMessage(rw http.ResponseWriter, request *http.Request, params httprouter.Params) {
+        rw.Header().Set("Content-Type", "application/json")
         decoder := json.NewDecoder(request.Body)
 
         message := &models.Message{}
 
-        err := decoder.Decode(&message)
-        if err != nil {
+        decodeErr := decoder.Decode(&message)
+        if decodeErr != nil {
                 rw.WriteHeader(http.StatusBadRequest)
-                fmt.Fprint(rw, err.Error())
+                fmt.Fprint(rw, decodeErr.Error())
+        } else {
+                saveErr := stores.MongoDB.Collection("messages").Save(message)
+                if saveErr != nil {
+                        rw.WriteHeader(http.StatusBadRequest)
+                        fmt.Fprint(rw, saveErr.Error())
+                } else {
+                        response, _ := json.Marshal(message)
+                        rw.WriteHeader(http.StatusCreated)
+                        fmt.Fprint(rw, string(response))
+                }
         }
-
-        saveErr := stores.MongoDB.Collection("messages").Save(message)
-        if saveErr != nil {
-                rw.WriteHeader(http.StatusBadRequest)
-                fmt.Fprint(rw, saveErr.Error())
-        }
-
-        rw.WriteHeader(http.StatusCreated)
-        fmt.Fprint(rw, "")
 }
 
 // GetMessage - Get Message by mongo ObjectId
@@ -269,14 +271,14 @@ func GetMessage(rw http.ResponseWriter, request *http.Request, params httprouter
         message := &models.Message{}
         messageID := params.ByName("messageID")
 
-        err := stores.MongoDB.Collection("messages").FindById(bson.ObjectIdHex(messageID), message)
-        if dnfError, ok := err.(*bongo.DocumentNotFoundError); ok {
+        mongoErr := stores.MongoDB.Collection("messages").FindById(bson.ObjectIdHex(messageID), message)
+        if dnfError, ok := mongoErr.(*bongo.DocumentNotFoundError); ok {
                 rw.WriteHeader(http.StatusNotFound)
                 fmt.Fprint(rw, dnfError.Error())
         } else {
-                if err != nil {
+                if mongoErr != nil {
                         rw.WriteHeader(http.StatusBadRequest)
-                        fmt.Fprint(rw, err.Error())
+                        fmt.Fprint(rw, mongoErr.Error())
                 } else {
                         response, _ := json.Marshal(message)
                         rw.Header().Set("Content-Type", "application/json")
@@ -287,6 +289,7 @@ func GetMessage(rw http.ResponseWriter, request *http.Request, params httprouter
 
 // ListMessages - Message listing
 func ListMessages(rw http.ResponseWriter, request *http.Request, params httprouter.Params) {
+        rw.Header().Set("Content-Type", "application/json")
         request.ParseForm()
 
         messages := &[]models.Message{}
@@ -301,10 +304,20 @@ func ListMessages(rw http.ResponseWriter, request *http.Request, params httprout
         }
         sort := request.Form.Get("sort")
 
-        verified, _ := strconv.ParseBool(request.Form.Get("verified"))
+        archived, _ := strconv.ParseBool(request.Form.Get("archived"))
 
         query := bson.M{
-                "verified": verified,
+                "archived": archived,
+        }
+
+        if channel := request.Form.Get("channel"); channel != "" {
+                query["channel"] = bson.ObjectIdHex(channel)
+        }
+
+        if creatorID := request.Form.Get("creator"); creatorID != "" {
+                query["creator"] = bson.M{
+                        "$all": bson.M{"$elemMatch": bson.M{"_id": bson.ObjectIdHex(creatorID)}},
+                }
         }
 
         results := models.ResultSet{stores.MongoDB.Collection("messages").Find(query)}
@@ -322,33 +335,62 @@ func ListMessages(rw http.ResponseWriter, request *http.Request, params httprout
         }
 
         response, _ := json.Marshal(tempJSON)
-
-        rw.Header().Set("Content-Type", "application/json")
         fmt.Fprint(rw, string(response))
 }
 
 // UpdateMessage - Update Message by ID
 func UpdateMessage(rw http.ResponseWriter, request *http.Request, params httprouter.Params) {
-        decoder := json.NewDecoder(request.Body)
-        message := models.Message{}
-
-        err := decoder.Decode(&message)
-        if err != nil {
-                rw.WriteHeader(http.StatusBadRequest)
-                fmt.Fprint(rw, err.Error())
-        }
-
-        updateQuery := bson.M{"$set": message}
+        rw.Header().Set("Content-Type", "application/json")
 
         messageID := params.ByName("messageID")
-        dnfErr := stores.MongoDB.Collection("messages").Collection().UpdateId(bson.ObjectIdHex(messageID), updateQuery)
 
-        if dnfErr != nil {
+        newMessage := models.Message{}
+        message := models.Message{}
+
+        mongoErr := stores.MongoDB.Collection("messages").FindById(bson.ObjectIdHex(messageID), messageID)
+        if dnfError, ok := mongoErr.(*bongo.DocumentNotFoundError); ok {
                 rw.WriteHeader(http.StatusNotFound)
-                fmt.Fprint(rw, dnfErr.Error())
+                fmt.Fprint(rw, dnfError.Error())
         } else {
-                rw.WriteHeader(http.StatusNoContent)
-                fmt.Fprint(rw, "")
+                decoder := json.NewDecoder(request.Body)
+                decodeErr := decoder.Decode(&newMessage)
+
+                if decodeErr != nil {
+                        rw.WriteHeader(http.StatusBadRequest)
+                        fmt.Fprint(rw, decodeErr.Error())
+                } else {
+
+                        if newMessage.Content != "" {
+                                message.Content = newMessage.Content
+                        }
+
+                        if newMessage.Sender != "" {
+                                sender := models.User{}
+                                senderErr := stores.MongoDB.Collection("users").FindById(newMessage.Sender, sender)
+                                if senderNotFound, ok := senderErr.(*bongo.DocumentNotFoundError); ok {
+                                        rw.WriteHeader(http.StatusNotFound)
+                                        fmt.Fprint(rw, senderNotFound.Error())
+                                } else {
+                                        message.Sender = sender
+                                }
+                        }
+
+                        if newMessage.Channel != "" {
+                                message.Channel = newMessage.Channel
+                        }
+
+                        updateQuery := bson.M{"$set": message}
+                        updateErr := stores.MongoDB.Collection("messages").Collection().UpdateId(bson.ObjectIdHex(messageID), updateQuery)
+
+                        if updateErr != nil {
+                                rw.WriteHeader(http.StatusBadRequest)
+                                fmt.Fprint(rw, updateErr.Error())
+                        } else {
+                                rw.WriteHeader(http.StatusNoContent)
+                                response, _ := json.Marshal(message)
+                                fmt.Fprint(rw, string(response))
+                        }
+                }
         }
 }
 

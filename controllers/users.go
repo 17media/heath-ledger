@@ -116,8 +116,6 @@ func ListUsers(rw http.ResponseWriter, request *http.Request, params httprouter.
         }
 
         response, _ := json.Marshal(tempJSON)
-
-        rw.Header().Set("Content-Type", "application/json")
         fmt.Fprint(rw, string(response))
 }
 

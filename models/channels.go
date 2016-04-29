@@ -11,6 +11,7 @@ package models
 
 import (
         "github.com/maxwellhealth/bongo"
+        "gopkg.in/mgo.v2/bson"
 )
 
 // Channel is a generic object for all pub/sub purpose
@@ -21,10 +22,11 @@ type Channel struct {
         Participants       []User `bson:"participants" json:"participants" binding:"required"`
 }
 
-// Message is an archvie of messages in a channel
+// Message is an archive of messages in a channel
 type Message struct {
         bongo.DocumentBase `bson:",inline"`
-        Sender             User    `bson:"sender" json:"sender" binding:"required"`
-        Channel            Channel `bson:"channel" json:"channel"`
-        Archived           bool    `bson:"archived" json:"archived"`
+        Sender             User          `bson:"sender" json:"sender" binding:"required"`
+        Channel            bson.ObjectId `bson:"channel" json:"channel"`
+        Content            string        `bson:"content" json:"content"`
+        Archived           bool          `bson:"archived" json:"archived"`
 }
